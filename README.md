@@ -1,8 +1,12 @@
 # `esri-loader-typings-helper` Plugin
 
+## coming soon to the VS Code Marketplace!!!
+
 ![preview](./previews/plugin-async.gif)
 
-This plugin is designed for usage in TypeScript applications complete with helpers for loading [ArcGIS JavaScript API](https://developers.arcgis.com/javascript/latest/) modules using the [esri-loader](https://github.com/Esri/esri-loader) library.  In addition to creating the `loadModules` syntax for you automatically, it will also create type annotations (based on [@types/arcgis-js-api](https://www.npmjs.com/package/@types/arcgis-js-api)) for the imported modules.  This will attempt to guess what the appropriate types are, and may require some manual tweaking.
+This plugin is designed for usage in TypeScript or JavaScript applications complete with helpers for loading [ArcGIS JavaScript API](https://developers.arcgis.com/javascript/latest/) modules using the [esri-loader](https://github.com/Esri/esri-loader) library.  In addition to creating the `loadModules` syntax for you automatically, it will also create type annotations (based on [@types/arcgis-js-api](https://www.npmjs.com/package/@types/arcgis-js-api)) for the imported modules.  This will attempt to guess what the appropriate types are, and may require some manual tweaking.
+
+> note: When using regular JavaScript, the typings will not be added and will just construct the regular `loadModules()` syntax.
 
 Here is an example of how to use the esri loader:
 
@@ -36,7 +40,8 @@ Since this plugin will automatically add the types (or at least a quick and dirt
 ![map proper type](./previews/images/map-proper-type.png)
 
 
-Although Esri recently released the beta version of [arcgis-js-api](https://www.npmjs.com/package/arcgis-js-api) as an npm package, it does not yet appear to have good tree shaking capabilities and therefore any applications that use it have massive bundle files, even if only using a few modules.  Therefore, in the meantime using `esri-loader` will help keep your apps smaller and handle loading the ArcGIS JavaScript API through `<script>` tag lazy loading.
+
+> Although Esri recently released the beta version of [arcgis-js-api](https://www.npmjs.com/package/arcgis-js-api) as an npm package, it does not yet appear to have good tree shaking capabilities and therefore any applications that use it have massive bundle files, even if only using a few modules.  Therefore, in the meantime using `esri-loader` will help keep your apps smaller and handle loading the ArcGIS JavaScript API through `<script>` tag lazy loading.
 
 ## Features
 
@@ -50,24 +55,58 @@ This plugin will allow you to quickly generate `loadModules()` code by simply pr
 
 ![preview](./previews/plugin-promise.gif)
 
-\!\[feature X\]\(images/feature-x.png\)
+### regular JavaScript
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![preview-js](./previews/plugin-async-js.gif)
+
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+This plugin is designed for usage with the [esri-loader]() package for both JavaScript and TypeScript.  When using TypeScript, you will also want to reference the [@types/arcgis-js-api](https://www.npmjs.com/package/@types/arcgis-js-api) package.
+
+to install the `esri-loader` as a regular dependency, simply use: 
+
+npm:
+
+```
+npm i --save esri-loader
+```
+
+yarn:
+```
+yarn add esri-loader
+```
+
+to install the `@types/arcgis-js-api` as a dev dependency:
+
+npm:
+```
+npm i --save-dev @types/arcgis-js-api
+```
+
+yarn:
+```
+yarn add --dev @types/arcgis-js-api
+```
+
+And then to reference the typings, add this to the top of a TypeScript file somewhere in your app:
+```ts
+/// <reference types="@types/arcgis-js-api" />
+```
+
+Doing the above will allow you to access esri types via the default declared namespace of `__esri`.  For example, to get the typing for a [FeatureLayer](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-FeatureLayer.html), use:
+
+```ts
+const featureLayer: __esri.FeatureLayer = someLayer
+```
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+* `esriLoaderTypingsHelper.esriTypesPrefix`: the default prefix alias for the [@types/arcgis-js-api](https://www.npmjs.com/package/@types/arcgis-js-api). This defaults to the default declared namespace esri uses which is `__esri`.  Examples of how to change this are shown below.
+* `esriLoaderTypingsHelper.typingFormat`: the desired format for the TypeScript typings (only applicable in TypeScript projects).  The default is `constructor`, which uses will attempt to guess the appropriate type.  This is accurate most of the time, but there may require some manual tweaking in some instances.  The other safer (but more ugly) option is to use `declared-module` which will use the `typeof import("esri/Map")` format.  These typings will always be correct because they use the declared module as defined in the `@types/arcgis-js-api` typings.  See examples below.
+* `esriLoaderTypingsHelper.syntaxStyle`: the syntax style.  This defaults to the `async/await` pattern and also supports regular `promise` syntax.  The differences are shown below.
 
 ## Known Issues
 
