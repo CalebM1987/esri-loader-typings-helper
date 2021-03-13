@@ -27,6 +27,8 @@
 		"esri-loader"
 	],
 	"activationEvents": [
+		"onLanguage:typescript",
+		"onLanguage:javascript",
 		"onCommand:esriLoaderTypingsHelper.loadMods",
 		"onCommand:esriLoaderTypingsHelper.loadModsWithDefaults"
 	],

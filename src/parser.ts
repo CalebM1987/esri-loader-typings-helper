@@ -113,15 +113,22 @@ export class EsriLoaderHelper {
     const impMods = mods
       .map(m => `"${m}"`)
       .join(multiLine ? `,\n${getTab()}`: ', ')
+
   
     if (async){
       // use async/await pattern
-      sig += `const [${wrapLine(varNames)}] = await loadModules<[${wrapLine(typeNames)}]>`
+      sig += `const [${wrapLine(varNames)}] = await loadModules`
+      sig += this.editor.document.languageId === 'typescript' 
+        ? `<[${wrapLine(typeNames)}]>`
+        : ''
       sig += `([${wrapLine(impMods)}])`
     } else {
       // use regular promise
       const comment = `\n${getTab()}// esri related code here\n\n`
-      sig += `loadModules<[${wrapLine(typeNames)}]>`
+      sig += `loadModules`
+      sig += this.editor.document.languageId === 'typescript' 
+        ? `<[${wrapLine(typeNames)}]>`
+        : ''
       sig += `([${wrapLine(impMods)}]).then(([${'\n' + getTab(1) + (wrapLine(varNames, 2).trimLeft())}]) => {${comment + prefix}})`
     }
     return sig
