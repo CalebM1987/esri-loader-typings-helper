@@ -4,6 +4,13 @@
 	"description": "automatically create full syntax and constructor types for using the loadModules() function from the \"esri-loader\" library",
 	"version": "0.0.1",
 	"publisher": "CalebM1987",
+	"repository": {
+		"type": "git", 
+		"url": "https://github.com/CalebM1987/esri-loader-typings-helper"
+	},
+	"bugs": {
+		"url": "https://github.com/CalebM1987/esri-loader-typings-helper/issues"
+	},
 	"engines": {
 		"vscode": "^1.54.0"
 	},
@@ -20,7 +27,8 @@
 		"esri-loader"
 	],
 	"activationEvents": [
-		"onCommand:esriLoaderTypingsHelper.loadMods"
+		"onCommand:esriLoaderTypingsHelper.loadMods",
+		"onCommand:esriLoaderTypingsHelper.loadModsWithDefaults"
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
