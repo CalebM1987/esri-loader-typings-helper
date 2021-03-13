@@ -1,5 +1,7 @@
 # `esri-loader-typings-helper` Plugin
 
+![preview](./previews/plugin-async.gif)
+
 This plugin is designed for usage in TypeScript applications complete with helpers for loading [ArcGIS JavaScript API](https://developers.arcgis.com/javascript/latest/) modules using the [esri-loader](https://github.com/Esri/esri-loader) library.  In addition to creating the `loadModules` syntax for you automatically, it will also create type annotations (based on [@types/arcgis-js-api](https://www.npmjs.com/package/@types/arcgis-js-api)) for the imported modules.  This will attempt to guess what the appropriate types are, and may require some manual tweaking.
 
 Here is an example of how to use the esri loader:
@@ -42,7 +44,11 @@ This plugin will allow you to quickly generate `loadModules()` code by simply pr
 
 ### async/await
 
-For example if there is an image subfolder under your extension project workspace:
+![preview](./previews/plugin-async.gif)
+
+### promise 
+
+![preview](./previews/plugin-promise.gif)
 
 \!\[feature X\]\(images/feature-x.png\)
 
