@@ -115,6 +115,8 @@ This extension contributes the following settings:
 
 * `esriLoaderTypingsHelper.syntaxStyle`: the syntax style.  This defaults to the `async/await` pattern and also supports regular `promise` syntax.  The differences are shown below.
 
+* `esriLoaderTypingsHelper.catchError`: option to wrap `async/await` pattern in a `try/catch` block, or to add a `.then()` callback to handle rejected promise in `promise` syntaxStyle.  This defaults to true.  If disabled, unhandled promise rejection errors can occur.  To follow best practices, this should be left on.
+
 ### changing the `esriTypesPrefix`
 
 To change the `esriTypesPrefix` for example going from the default `__esri` as the declared namespace from `@types/arcgis-js-api` to the alias of just `esri` you would do the following:
@@ -141,6 +143,14 @@ For example, the `constructor` style `__esri.FeatureLayerConstructor` becomes `t
 And this is how the plugin looks when using the `declared-module` as the `typingsFormat`:
 
 ![declared-module](./previews/declaredModule.gif)
+
+### disabling the `catchError`
+
+> warning: use with caution!
+
+When using the `async/await` syntax, it can be tempting to not have the `loadModules` wrapped in a `try/catch` block.
+
+![unhandled-rejection](./previews/images/unhandled-rejection.png)
 
 
 ## Known Issues
