@@ -2,8 +2,8 @@
 	"name": "esri-loader-typings-helper",
 	"displayName": "esri-loader Typings Helper",
 	"description": "automatically create full syntax and constructor types for using the loadModules() function from the \"esri-loader\" library",
-	"version": "1.0.1",
-	"publisher": "CalebM1987",
+	"version": "1.0.0",
+	"publisher": "Caleb Mackey",
 	"icon": "/previews/images/icon.png",
 	"repository": {
 		"type": "git",
