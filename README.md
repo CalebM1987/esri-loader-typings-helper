@@ -59,6 +59,13 @@ This plugin will allow you to quickly generate `loadModules()` code by simply pr
 
 ![preview-js](./previews/plugin-async-js.gif)
 
+## Commands
+
+This plugin supports two commands:
+
+* `esri-loader Helper`: this will run the `loadModules` helper and prompt the user to choose either `async/await` or `promsie` for the syntax style.  Other options such as the `esriTypesPrefix` (defaults to `__esri`) and `typingFormat` (defaults to `constructor`) are read from this extension's settings.
+
+* `esri-loader Helper with Defaults`: this is similar to the `esri-loader Helper` command except it will not prompt you for the `syntaxStyle` and instead will create the snippet based on what is configured in the extension's settings for the default style (`async/await` is the default out of the box).
 
 ## Requirements
 
@@ -105,47 +112,55 @@ const featureLayer: __esri.FeatureLayer = someLayer
 This extension contributes the following settings:
 
 * `esriLoaderTypingsHelper.esriTypesPrefix`: the default prefix alias for the [@types/arcgis-js-api](https://www.npmjs.com/package/@types/arcgis-js-api). This defaults to the default declared namespace esri uses which is `__esri`.  Examples of how to change this are shown below.
+
 * `esriLoaderTypingsHelper.typingFormat`: the desired format for the TypeScript typings (only applicable in TypeScript projects).  The default is `constructor`, which uses will attempt to guess the appropriate type.  This is accurate most of the time, but there may require some manual tweaking in some instances.  The other safer (but more ugly) option is to use `declared-module` which will use the `typeof import("esri/Map")` format.  These typings will always be correct because they use the declared module as defined in the `@types/arcgis-js-api` typings.  See examples below.
+
 * `esriLoaderTypingsHelper.syntaxStyle`: the syntax style.  This defaults to the `async/await` pattern and also supports regular `promise` syntax.  The differences are shown below.
+
+### changing the `esriTypesPrefix`
+
+To change the `esriTypesPrefix` for example going from the default `__esri` as the declared namespace from `@types/arcgis-js-api` to the alias of just `esri` you would do the following:
+
+```ts
+// map.ts
+/// <reference types="@types/arcgis-js-api" />
+import esri = __esri
+
+// do stuff with esri-loader
+```
+
+And then modify the settings.json to reflect the alias:
+![typingFormat](./previews/typingsPrefix.gif)
+
+### changing the `typingsFormat`
+
+To change from the default `constructor` typing format to the `declared-module`, modify the propertin in the `settings.json` file for your VS Code.  Using `declared-module` as the typing format will ensure that the typings will always be correct.  This is not the default setting because the typings are not as aesthetically pleasing.
+
+For example, the `constructor` style `__esri.FeatureLayerConstructor` becomes `typeof import("esri/layers/FeatureLayer")` as the `declared-module` style.  This is due to how the typing modules are declared in the [@types/arcgis-js-api](https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/master/types/arcgis-js-api/index.d.ts):
+
+![arcgis-js-api-fl](./previews/images/arcgis-js-api-fl.png)
+
+And this is how the plugin looks when using the `declared-module` as the `typingsFormat`:
+
+![declared-module](./previews/declaredModule.gif)
+
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+At this time, when using the `constructor` option for the `esriLoaderTypingsHelper.typingFormat` setting this plugin will guess the appropriate typing by using the `__esri.<module-name>Constructor` convention unless it is a utlity module.  There is no validation check. This is probably accurate for most modules imported via the `esri-loader`, but some manual tweaking may be necessary in some cases.  If you want to avoid this potential issue, use the `declared-module` option for the `typingFormat` setting to always ensure the typings are correct.
 
-## Release Notes
+## Changelog
 
-Users appreciate release notes as you update your extension.
+Check the [CHANGELOG.md](./CHANGELOG.md) for any version changes.
 
-### 1.0.0
+## Reporting Issues
 
-Initial release of ...
+Report any issues on the github [issues](https://github.com/CalebM1987/esri-loader-typings-helper/issues) page. Follow the template and add as much information as possible.
 
-### 1.0.1
+## Contributing
 
-Fixed issue #.
+The source code for this extension is hosted on [GitHub](https://github.com/CalebM1987/esri-loader-typings-helper). Contributions, pull requests, suggestions, and bug reports are greatly appreciated.
 
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+-   Post any issues and suggestions to the github [issues page](https://github.com/CalebM1987/esri-loader-typings-helper/issues). Add the `feature request` tag to any feature requests or suggestions.
+-   To contribute, fork the project and then create a pull request back to master. Please update the README if you make any noticeable feature changes.
+-   There is no official contribution guide or code of conduct yet, but please follow the standard open source norms and be respectful in any comments you make.
