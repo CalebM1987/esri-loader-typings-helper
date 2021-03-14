@@ -20,6 +20,7 @@ export interface IEsriLoaderExtensionOptions extends vscode.WorkspaceConfigurati
   esriTypesPrefix: string;
   typingFormat: EsriTypingFormat;
   syntaxStyle: SyntaxStyle;
+  catchError: boolean;
 }
 
 
@@ -62,7 +63,8 @@ export class EsriLoaderHelper {
 	}
 
   public setLoadModules({ mods=[], async=true }: ISetModulesOptions): string {
-    let sig = ''
+    // string builder
+    let sb = ''
     const names = []
     const types: string[] = []
   
@@ -94,42 +96,77 @@ export class EsriLoaderHelper {
     // get formatting
     const multiLine = names.length > 2
     // get line prefix (whitespace)
-    const prefix = whitespace ? ' '.repeat(whitespace): ''
+    let prefix = whitespace ? ' '.repeat(whitespace): ''
+    // make sure we are starting on a true tabbed position
+    const adjustment = ' '.repeat(prefix.length % tabSize)
+    console.log('prefix length: ', prefix.length, prefix.length % tabSize)
+    prefix += adjustment
+
     // tab generator
     const getTab = (level=1) => prefix + ' '.repeat(tabSize * level)
+    
     // optional new line: if multiLine, do new line
     const optNL = multiLine ? '\n': ''
+    // optional tab, only use when multiline and/or async
+    const optTB = config.catchError && multiLine && async
+      ? getTab(0)
+      : ''
+    
     // line wrapping function
     const wrapLine = (s: string, level: number=1) => multiLine 
       ? [optNL, getTab(level), s, optNL, prefix].join('')
       : s
     
     // esri vars, typings and module strings
-    const varNames = names.join(multiLine ? `,\n${getTab()}`: ', ')
-    const typeNames = types.join(multiLine ? `,\n${getTab()}`: ', ')
+    const tabLevel = async && config.catchError ? 2: 1
+    const varNames = names.join(multiLine ? `,\n${multiLine 
+      ? getTab(async ? tabLevel: 2)
+      : ''
+    }`: ', ')
+    const typeNames = types.join(multiLine ? `,\n${getTab(tabLevel)}`: ', ')
+    console.log(`"${varNames}"`)
+    console.log(`"${typeNames}"`)
 
     // the formatted import modules
     const impMods = mods
       .map(m => `"${m}"`)
-      .join(multiLine ? `,\n${getTab()}`: ', ')
+      .join(multiLine ? `,\n${getTab(tabLevel)}`: ', ')
 
+    const typings = this.editor.document.languageId === 'typescript' 
+      ? `<[${multiLine ? getTab(): ''}${wrapLine(typeNames, tabLevel)}${optTB}]>`
+      : ''
   
+    const placeholder = 'work with esri modules here'
+    const errComment = 'handle any script or module loading errors'
+
+    // return loadModules() string builder code
     if (async){
-      // use async/await pattern
-      sig += `const [${wrapLine(varNames)}] = await loadModules`
-      sig += this.editor.document.languageId === 'typescript' 
-        ? `<[${wrapLine(typeNames)}]>`
-        : ''
-      sig += `([${wrapLine(impMods)}])`
+      sb += adjustment
+      sb += config.catchError ? `try {\n${getTab()}`: ''
+      sb += `const [${wrapLine(varNames, tabLevel)}${optTB}] = await loadModules`
+      sb += typings
+      sb += `([${wrapLine(impMods, tabLevel)}${optTB}])\n\n`
+      sb += `${getTab(config.catchError ? 1: 0)}// ${placeholder}`
+      if (config.catchError){
+        sb += `\n\n${getTab(0)}} catch (err) {\n${getTab()}// ${errComment}\n`
+        sb += `${getTab()}console.error(err);\n${getTab(0)}}`
+      }
     } else {
       // use regular promise
-      const comment = `\n${getTab()}// esri related code here\n\n`
-      sig += `loadModules`
-      sig += this.editor.document.languageId === 'typescript' 
-        ? `<[${wrapLine(typeNames)}]>`
-        : ''
-      sig += `([${wrapLine(impMods)}]).then(([${'\n' + getTab(1) + (wrapLine(varNames, 2).trimLeft())}]) => {${comment + prefix}})`
+      const vars = `${(multiLine ? getTab(1): '') + (wrapLine(varNames, 2))}${multiLine ? getTab(0): ''}`
+      const comment = `\n\n${getTab()}// ${placeholder}\n\n`
+
+      // build string
+      sb += `${adjustment}loadModules`
+      sb += typings
+      sb += `([${wrapLine(impMods)}])\n`
+      sb += `${getTab(0)}.then(${multiLine ? '\n' + getTab(): ''}`
+      sb += `([${vars}]) => {${comment + prefix}})\n`
+      if (config.catchError){
+        sb += `${getTab(0)}.catch((err) => {\n${getTab()}// ${errComment}\n`
+        sb += `${getTab()}console.error(err);\n${getTab(0)}})`
+      }
     }
-    return sig
+    return sb
   }
 }
