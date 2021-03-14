@@ -2,7 +2,7 @@
 	"name": "esri-loader-typings-helper",
 	"displayName": "esri-loader Typings Helper",
 	"description": "automatically create full syntax and constructor types for using the loadModules() function from the \"esri-loader\" library",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"publisher": "CalebMackey",
 	"icon": "images/icon.png",
 	"repository": {
