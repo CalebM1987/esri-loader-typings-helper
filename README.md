@@ -1,7 +1,5 @@
 # `esri-loader-typings-helper` Plugin
 
-## coming soon to the VS Code Marketplace!!!
-
 ![preview](./previews/plugin-async.gif)
 
 This plugin is designed for usage in TypeScript or JavaScript applications complete with helpers for loading [ArcGIS JavaScript API](https://developers.arcgis.com/javascript/latest/) modules using the [esri-loader](https://github.com/Esri/esri-loader) library.  In addition to creating the `loadModules` syntax for you automatically, it will also create type annotations (based on [@types/arcgis-js-api](https://www.npmjs.com/package/@types/arcgis-js-api)) for the imported modules.  This will attempt to guess what the appropriate types are, and may require some manual tweaking.
