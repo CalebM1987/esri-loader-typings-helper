@@ -1,7 +1,6 @@
 import { suggestedRenames } from './matching'
 import { extensionID } from './constants'
 import * as vscode from 'vscode'
-import { SSL_OP_NO_TLSv1 } from 'node:constants'
 
 interface ISetModulesOptions {
   mods: string[]; 
@@ -16,7 +15,7 @@ type SyntaxStyle =
   | "async/await"
   | "promise"
 
-export interface IEsriLoaderExtensionOptions {
+export interface IEsriLoaderExtensionOptions extends vscode.WorkspaceConfiguration  {
   /** the alias to @types/arcgis-js-api typings */
   esriTypesPrefix: string;
   typingFormat: EsriTypingFormat;
@@ -67,7 +66,7 @@ export class EsriLoaderHelper {
     const names = []
     const types: string[] = []
   
-    const config: IEsriLoaderExtensionOptions = vscode.workspace.getConfiguration(extensionID)
+    const config = vscode.workspace.getConfiguration(extensionID) as IEsriLoaderExtensionOptions
     const tabSize = typeof this.editor.options.tabSize == 'string' 
 				? parseInt(this.editor.options.tabSize as string)
 				: this.editor.options.tabSize

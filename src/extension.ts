@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function loadModsOnFly(){
-	const config: IEsriLoaderExtensionOptions = vscode.workspace.getConfiguration(extensionID)
+	const config = vscode.workspace.getConfiguration(extensionID) as IEsriLoaderExtensionOptions
 
 	// get text editor
 	const editor = vscode.window.activeTextEditor
@@ -94,7 +94,7 @@ function loadModsFromConfig(){
 			return;
 		}
 
-		const config: IEsriLoaderExtensionOptions = vscode.workspace.getConfiguration(extensionID)
+		const config = vscode.workspace.getConfiguration(extensionID) as IEsriLoaderExtensionOptions
 
 		// const whitespace = editor.selection.start.character
 		const sig = esriHelper.setLoadModules({
