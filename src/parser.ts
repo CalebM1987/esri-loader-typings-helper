@@ -1,5 +1,6 @@
 import { suggestedRenames } from './matching'
 import { extensionID, typescript_language_ids } from './constants'
+import { StringBuilder } from './builder'
 import * as vscode from 'vscode'
 
 interface ISetModulesOptions {
@@ -15,6 +16,7 @@ type SyntaxStyle =
   | "async/await"
   | "promise"
 
+
 export interface IEsriLoaderExtensionOptions extends vscode.WorkspaceConfiguration  {
   /** the alias to @types/arcgis-js-api typings */
   esriTypesPrefix: string;
@@ -28,6 +30,9 @@ const lazyFilter = (s: string) => /^(esri)\//.test(s)
 
 // get actual module name
 const getTail = (s: string) => s.split('/').slice(-1)[0]
+
+const DEFAULT_PLACEHOLDER = '// work with esri modules here'
+const DEFAULT_ERROR_COMMENT = '// handle any script or module loading errors'
 
 
 export class EsriLoaderHelper {
@@ -45,7 +50,7 @@ export class EsriLoaderHelper {
 		}
 
 		// get selected text
-		const text = editor.document.getText(editor.selection);
+		const text = this.editor.document.getText(this.editor.selection);
 		
 		if (text.length){
 			try {
@@ -63,11 +68,11 @@ export class EsriLoaderHelper {
 
   /**
    * test for TypeScript, any special cases should be handled here
-   * @returns 
+   * @returns boolean value to deterimin if editor is using typescript
    */
   public get isTypeScript(): boolean {
     const langId = this.editor.document.languageId
-    console.log('LANGUAGE ID: ', langId)
+    //console.log('LANGUAGE ID: ', langId)
 
     // strict handler for single file vue components (.vue file)
     if (langId === 'vue'){
@@ -88,9 +93,37 @@ export class EsriLoaderHelper {
     return typescript_language_ids.includes(this.editor.document.languageId)
   }
 
+  private _addPlaceholder(sb: StringBuilder, indent=0, placeholderText=DEFAULT_PLACEHOLDER){ 
+    // empty line
+    sb.addLine('')
+    sb.addLine(placeholderText, { indent })
+    sb.addLine('')
+  }
+
+  private _addCatchBlock(sb: StringBuilder, useAsync=true){
+    const consoleErr = 'console.error(error)'
+    if (useAsync){
+      // catch block
+      sb.addLine('} catch (error) { ')
+      sb.addLine(DEFAULT_ERROR_COMMENT, { indent: 1 })
+      sb.addLine(consoleErr, { indent: 1 })
+      sb.addLine('}')
+    } else {
+      // promise rejection catch
+      sb.addLine('.catch((error) => {')
+      sb.addLine(DEFAULT_ERROR_COMMENT, { indent: 1 })
+      sb.addLine(consoleErr, { indent: 1 })
+      sb.addLine('})')
+    }
+  }
+
+  /**
+   * creates the loadModules() code snippet
+   * @param {ISetModulesOptions} options - options for creating the code snippet
+   * @returns the generated snippet
+   */
   public setLoadModules({ mods=[], async=true }: ISetModulesOptions): string {
-    // string builder
-    let sb = ''
+
     const names = []
     const types: string[] = []
   
@@ -115,47 +148,16 @@ export class EsriLoaderHelper {
         types.push(`typeof import("${mod}")`)
       } else {
         // probably not as safe, but seems to work most of the time 🤷
-        types.push(`${defaultNamespace}.${tail}${tail.endsWith('Utils') || mod in suggestedRenames ? '': 'Constructor'}`) 
+        types.push(`${defaultNamespace}.${tail}${
+          tail.endsWith('Utils') || mod in suggestedRenames 
+            ? ''
+            : 'Constructor'
+        }`) 
       }
     }
   
-    // get formatting
-    const multiLine = names.length > 2
-    // get line prefix (whitespace)
-    let prefix = whitespace ? ' '.repeat(whitespace): ''
     // make sure we are starting on a true tabbed position
-    const adjustment = ' '.repeat(prefix.length % tabSize)
-    prefix += adjustment
-
-    // tab generator
-    const getTab = (level=1) => prefix + ' '.repeat(tabSize * level)
-    
-    // optional new line: if multiLine, do new line
-    const optNL = multiLine ? '\n': ''
-    // optional tab, only use when multiline and/or async
-    const optTB = config.catchError && multiLine && async
-      ? getTab(0)
-      : ''
-
-    console.log(`optTB: "${optTB}"`)
-    
-    // line wrapping function
-    const wrapLine = (s: string, level: number=1) => multiLine 
-      ? [optNL, getTab(level), s, optNL, prefix].join('')
-      : s
-    
-    // esri vars, typings and module strings
-    const tabLevel = async && config.catchError ? 2: 1
-    const varNames = names.join(multiLine ? `,\n${multiLine 
-      ? getTab(async ? tabLevel: 2)
-      : ''
-    }`: ', ')
-    const typeNames = types.join(multiLine ? `,\n${getTab(tabLevel)}`: ', ')
-
-    // the formatted import modules
-    const impMods = mods
-      .map(m => `"${m}"`)
-      .join(multiLine ? `,\n${getTab(tabLevel)}`: ', ')
+    const adjustment = whitespace % tabSize
 
     // check for TypeScript, if so add typings
     let isTS = false
@@ -164,42 +166,130 @@ export class EsriLoaderHelper {
     } catch(err){
       console.warn(err)
     }
-    
-    const typings = isTS
-      ? `<[${multiLine ? getTab(): ''}${wrapLine(typeNames, tabLevel)}${optTB}]>`
-      : ''
-  
-    const placeholder = 'work with esri modules here'
-    const errComment = 'handle any script or module loading errors'
 
-    // return loadModules() string builder code
+    // get formatting
+    const modNames = mods.map(m => `"${m}"`)
+    const multiLine = names.length > (isTS ? 1: 3)
+
+    // create string builder
+    const sb = new StringBuilder(whitespace + adjustment, tabSize)
+
     if (async){
-      sb += adjustment
-      sb += config.catchError ? `try {\n${getTab()}`: ''
-      sb += `const [${wrapLine(varNames, tabLevel)}${optTB}] = await loadModules`
-      sb += typings
-      sb += `([${wrapLine(impMods, tabLevel)}${optTB}])\n\n`
-      sb += `${getTab(config.catchError ? 1: 0)}// ${placeholder}`
+      // use async/await syntax
+      // set baseIndent
+      let baseIndent = 0
       if (config.catchError){
-        sb += `\n\n${getTab(0)}} catch (err) {\n${getTab()}// ${errComment}\n`
-        sb += `${getTab()}console.error(err);\n${getTab(0)}}`
+        sb.addLine('try {')
+        baseIndent = 1
       }
+      // set async syntax
+      if (multiLine){
+        sb.addLine('const [', { indent: baseIndent })
+        // destructure var names over multiple lines
+        names.forEach(v => {
+          sb.addLine(v + ',', { indent: baseIndent + 1 })
+        })
+        // close off var names and call loadModules
+        sb.addLine(`] = await loadModules${isTS ? '<[': '(['}`, { indent: baseIndent })
+        if (isTS){
+          // add typings
+          if (multiLine){
+            types.forEach(t => {
+              sb.addLine(t + ',', { indent: baseIndent + 1 })
+            })
+          }
+
+          // close off typings
+          sb.addLine(']>([', { indent: baseIndent })
+        } 
+
+        // add module names
+        modNames.forEach(m => {
+          sb.addLine(m + ',', { indent: baseIndent + 1 })
+        })
+
+        // close imported modules
+        sb.addLine('])', { indent: baseIndent })
+        // add placeholder
+        this._addPlaceholder(sb, baseIndent)
+       
+      } else {
+        // destructure into single line
+        const varNames = names.join(', ')
+        const typings = isTS ? `<[${types.join(', ')}]>`: ''
+        const modArray = `[${modNames.join(', ')}]`
+        const parts = [
+          `const [${varNames}]`,
+          `= await loadModules${typings}(${modArray})`
+        ].join(' ')
+
+        // add joined string
+        sb.addLine(parts, { indent: baseIndent })
+
+        // add placeholder
+        this._addPlaceholder(sb, baseIndent)
+      }
+
+      // add catch block
+      if (config.catchError){
+        this._addCatchBlock(sb, async)
+      }
+
+      return sb.text
+      
     } else {
       // use regular promise
-      const vars = `${(multiLine ? getTab(1): '') + (wrapLine(varNames, 2))}${multiLine ? getTab(0): ''}`
-      const comment = `\n\n${getTab()}// ${placeholder}\n\n`
+      if (multiLine){
 
-      // build string
-      sb += `${adjustment}loadModules`
-      sb += typings
-      sb += `([${wrapLine(impMods)}])\n`
-      sb += `${getTab(0)}.then(${multiLine ? '\n' + getTab(): ''}`
-      sb += `([${vars}]) => {${comment + prefix}})\n`
-      if (config.catchError){
-        sb += `${getTab(0)}.catch((err) => {\n${getTab()}// ${errComment}\n`
-        sb += `${getTab()}console.error(err);\n${getTab(0)}})`
+        sb.addLine(`loadModules${isTS ? '<[': '(['}`)
+
+        if (isTS){
+          // add typings
+          types.forEach(t => {
+            sb.addLine(t + ',', { indent: 1 })
+          })
+  
+          // close off typings
+          sb.addLine(']>([')
+        } 
+
+        // add module names
+        modNames.forEach(m => {
+          sb.addLine(m + ',', { indent: 1 })
+        })
+        sb.addLine('])')
+
+        // add destructured vars
+        sb.addLine('.then(([')
+        names.forEach(n => {
+          sb.addLine(n + ',', { indent: 1 })
+        })
+
+        // close vars
+        sb.addLine(']) => {')
+
+        // promise callback
+        this._addPlaceholder(sb, 1)
+        sb.addLine('})')
+
+      } else {
+        // single line
+        const typings = isTS ? `<[${types.join(', ')}]>`: ''
+        const modArray = `[${modNames.join(', ')}]`
+        
+        sb.addLine(`loadModules${typings}(${modArray})`)
+        // promise callback
+        sb.addLine(`.then(([${names.join(', ')}]) => {`)
+        this._addPlaceholder(sb, 1)
+        sb.addLine('})')
       }
+
+      // catch block
+      if (config.catchError){
+        this._addCatchBlock(sb, async)
+      }
+
+      return sb.text
     }
-    return sb
   }
 }
