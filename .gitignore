@@ -6,3 +6,4 @@ node_modules
 
 # ignore .mp4 previews
 *.mp4
+scripts/mp4ToGIF.py
