@@ -1,5 +1,5 @@
 import { suggestedRenames } from './matching'
-import { extensionID } from './constants'
+import { extensionID, typescript_language_ids } from './constants'
 import * as vscode from 'vscode'
 
 interface ISetModulesOptions {
@@ -22,7 +22,6 @@ export interface IEsriLoaderExtensionOptions extends vscode.WorkspaceConfigurati
   syntaxStyle: SyntaxStyle;
   catchError: boolean;
 }
-
 
 // lazy filter for esri modules ( "esri/*" )
 const lazyFilter = (s: string) => /^(esri)\//.test(s)
@@ -62,6 +61,33 @@ export class EsriLoaderHelper {
 		}
 	}
 
+  /**
+   * test for TypeScript, any special cases should be handled here
+   * @returns 
+   */
+  public get isTypeScript(): boolean {
+    const langId = this.editor.document.languageId
+    console.log('LANGUAGE ID: ', langId)
+
+    // strict handler for single file vue components (.vue file)
+    if (langId === 'vue'){
+      const range  = new vscode.Range(
+        new vscode.Position(0, 0),
+        this.editor.selection.start
+      )
+      const docText = this.editor.document.getText(range)
+      // check for <script lang="ts"> tag 
+      const scriptTs = /(\<script)(.*)(lang\=\"ts\")(.*)(\>)/
+      return scriptTs.test(docText)
+    }
+
+    // any other "special" handlers here
+
+
+    // default typescript ids
+    return typescript_language_ids.includes(this.editor.document.languageId)
+  }
+
   public setLoadModules({ mods=[], async=true }: ISetModulesOptions): string {
     // string builder
     let sb = ''
@@ -99,7 +125,6 @@ export class EsriLoaderHelper {
     let prefix = whitespace ? ' '.repeat(whitespace): ''
     // make sure we are starting on a true tabbed position
     const adjustment = ' '.repeat(prefix.length % tabSize)
-    console.log('prefix length: ', prefix.length, prefix.length % tabSize)
     prefix += adjustment
 
     // tab generator
@@ -111,6 +136,8 @@ export class EsriLoaderHelper {
     const optTB = config.catchError && multiLine && async
       ? getTab(0)
       : ''
+
+    console.log(`optTB: "${optTB}"`)
     
     // line wrapping function
     const wrapLine = (s: string, level: number=1) => multiLine 
@@ -124,15 +151,21 @@ export class EsriLoaderHelper {
       : ''
     }`: ', ')
     const typeNames = types.join(multiLine ? `,\n${getTab(tabLevel)}`: ', ')
-    console.log(`"${varNames}"`)
-    console.log(`"${typeNames}"`)
 
     // the formatted import modules
     const impMods = mods
       .map(m => `"${m}"`)
       .join(multiLine ? `,\n${getTab(tabLevel)}`: ', ')
 
-    const typings = this.editor.document.languageId === 'typescript' 
+    // check for TypeScript, if so add typings
+    let isTS = false
+    try {
+      isTS = this.isTypeScript
+    } catch(err){
+      console.warn(err)
+    }
+    
+    const typings = isTS
       ? `<[${multiLine ? getTab(): ''}${wrapLine(typeNames, tabLevel)}${optTB}]>`
       : ''
   
