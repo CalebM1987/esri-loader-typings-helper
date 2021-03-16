@@ -1,6 +1,18 @@
-# Change Log
+# Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [1.2.0](https://github.com/CalebM1987/esri-loader-typings-helper/compare/v1.1.0...v1.2.0) (2021-03-16)
+
+
+### Features
+
+* **parser,builder:** use string builder for creating syntax ([8e54e45](https://github.com/CalebM1987/esri-loader-typings-helper/commit/8e54e458b119beb9c67356e558ab5442ef88f32c))
+
+
+### Bug Fixes
+
+* **parser:** support TypeScript in .vue files ([7a88983](https://github.com/CalebM1987/esri-loader-typings-helper/commit/7a889834a6a7d2dc92eae7837f34cc9b0514b7a4)), closes [#1](https://github.com/CalebM1987/esri-loader-typings-helper/issues/1)
 
 ## [1.1.0](https://github.com/CalebM1987/esri-loader-typings-helper/compare/v1.0.2...v1.1.0) (2021-03-14)
 
