@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/CalebM1987/esri-loader-typings-helper/compare/v1.2.0...v1.2.1) (2021-05-05)
+
+
+### Bug Fixes
+
+* **matching:** fix constructor typings for geometryEngine modules, fixes [#2](https://github.com/CalebM1987/esri-loader-typings-helper/issues/2) ([2323310](https://github.com/CalebM1987/esri-loader-typings-helper/commit/2323310257141b1f14f0a0a47575c0c3eb199d9c))
+
 ## [1.2.0](https://github.com/CalebM1987/esri-loader-typings-helper/compare/v1.1.0...v1.2.0) (2021-03-16)
 
 
