@@ -1,6 +1,8 @@
 import { suggestedRenames } from './matching'
 import { extensionID, typescript_language_ids } from './constants'
 import { StringBuilder } from './builder'
+import { readFileSync } from 'fs'
+import { log } from './logger'
 import * as vscode from 'vscode'
 
 interface ISetModulesOptions {
@@ -25,6 +27,19 @@ export interface IEsriLoaderExtensionOptions extends vscode.WorkspaceConfigurati
   catchError: boolean;
 }
 
+interface EsriVersions {
+  esriLoader?: string;
+  typings?: string;
+}
+
+export interface LazyPackage {
+  name: string;
+  version?: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}
+
 // lazy filter for esri modules ( "esri/*" )
 const lazyFilter = (s: string) => /^(esri)\//.test(s)
 
@@ -33,6 +48,44 @@ const getTail = (s: string) => s.split('/').slice(-1)[0]
 
 const DEFAULT_PLACEHOLDER = '// work with esri modules here'
 const DEFAULT_ERROR_COMMENT = '// handle any script or module loading errors'
+const OVERRIDE_IMPORT_TYPINGS_REGEX = /(\/smartMapping\/|\/support\/)/
+const VERSION_REGEX = /\d+(\.\d+)+?/
+
+/**
+ * finds the esri versions
+ * @returns 
+ */
+export function findEsriVersions(): Promise<EsriVersions>{
+  return new Promise((resolve, reject)=> {
+
+    const keys: Array<keyof LazyPackage> = ['dependencies', 'devDependencies', 'peerDependencies']
+
+    vscode.workspace.findFiles('**/package.json', 'node_modules').then((pkgFiles)=> {
+  
+      let esriLoader, typings;
+      for (const pkgFile of pkgFiles){
+        log(`located package.json file: "${pkgFile.path}"`)
+        const pkg = JSON.parse(readFileSync(pkgFile.path).toString())
+        for (const key of keys){
+          esriLoader = (VERSION_REGEX.exec((pkg[key] || {})['esri-loader'] || '') ?? [])[0]
+          if (esriLoader) break;
+        }
+        for (const key of keys){
+          typings = (VERSION_REGEX.exec((pkg[key] || {})['@types/arcgis-js-api'] || '') ?? [])[0]
+          if (typings) break;
+        }
+
+        if (typings){
+          break;
+        }
+        
+      }
+
+      resolve({ esriLoader, typings})
+      
+    })
+  })
+}
 
 
 export class EsriLoaderHelper {
@@ -122,11 +175,16 @@ export class EsriLoaderHelper {
    * @param {ISetModulesOptions} options - options for creating the code snippet
    * @returns the generated snippet
    */
-  public setLoadModules({ mods=[], async=true }: ISetModulesOptions): string {
+  public async setLoadModules({ mods=[], async=true }: ISetModulesOptions): Promise<string> {
 
     const names = []
     const types: string[] = []
-  
+
+    const { esriLoader, typings } = await findEsriVersions()
+    log(`esri-loader version "${esriLoader}", @types/arcgis-js-api version "${typings}"`)
+    const useTypeOf = Number(esriLoader ?? '0') >= 3.7 || Number(typings ?? '0') >= 4.25
+    log(`should use typeof instead of constructor: ${useTypeOf}`)
+    
     const config = vscode.workspace.getConfiguration(extensionID) as IEsriLoaderExtensionOptions
     const tabSize = typeof this.editor.options.tabSize == 'string' 
 				? parseInt(this.editor.options.tabSize as string)
@@ -136,22 +194,25 @@ export class EsriLoaderHelper {
     const whitespace = this.editor.selection.start.character
     const defaultNamespace: string = config.esriTypesPrefix || '__esri'
     const typingFormat = config.typingFormat || 'constructor'
+
+    const skipTypeOf = ['IdentityManager']
   
     // iterate over modules to build signature
     for (const mod of mods){
       const tail = getTail(mod)
       names.push(mod in suggestedRenames ? suggestedRenames[mod]: tail)
+      const typeofPrefix = useTypeOf && !skipTypeOf.includes(tail) ? 'typeof ': ''
   
       // set typing,  example: __esri.FeatureLayer
       // edit: this is NOT the correct type, needs to be typeof import
-      if (typingFormat === 'declared-module'){
+      if (typingFormat === 'declared-module' || OVERRIDE_IMPORT_TYPINGS_REGEX.test(mod)){
         types.push(`typeof import("${mod}")`)
       } else {
         // probably not as safe, but seems to work most of the time 🤷
-        types.push(`${defaultNamespace}.${tail}${
+        types.push(`${typeofPrefix}${defaultNamespace}.${tail}${
           tail.endsWith('Utils') || mod in suggestedRenames 
             ? ''
-            : 'Constructor'
+            : useTypeOf ? '': 'Constructor'
         }`) 
       }
     }
