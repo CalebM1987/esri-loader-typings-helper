@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/CalebM1987/esri-loader-typings-helper/compare/v1.2.1...v1.3.0) (2023-04-21)
+
+
+### Features
+
+* added logger ([a706633](https://github.com/CalebM1987/esri-loader-typings-helper/commit/a706633e82cf1334469379412ff2d915d27a5e11))
+
+
+### Bug Fixes
+
+* **parser:** remove deprecated Constructor typings if using arcgis js api ^4.25 ([f344bf7](https://github.com/CalebM1987/esri-loader-typings-helper/commit/f344bf7b13b62712c38e4f904ec42135384ac073))
+
 ### [1.2.1](https://github.com/CalebM1987/esri-loader-typings-helper/compare/v1.2.0...v1.2.1) (2021-05-05)
 
 
