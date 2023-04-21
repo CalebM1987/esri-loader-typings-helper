@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 import { extensionID } from './constants'
 import { IEsriLoaderExtensionOptions, EsriLoaderHelper } from './parser';
-
+import { log } from './logger';
 
 export function activate(context: vscode.ExtensionContext) {
+	log('activated esri-typings-helper')
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('esriLoaderTypingsHelper.loadModsWithDefaults', loadModsFromConfig)
@@ -14,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 	)
 }
 
-function loadModsOnFly(){
+async function loadModsOnFly(){
 	const config = vscode.workspace.getConfiguration(extensionID) as IEsriLoaderExtensionOptions
 
 	// get text editor
@@ -46,10 +47,10 @@ function loadModsOnFly(){
 		]
 
 		// build code replacement when user chooses syntax preference
-		quickPick.onDidChangeSelection(([ choice ])=> {
+		quickPick.onDidChangeSelection(async ([ choice ])=> {
 			if (choice){
 				// create code signature
-				const sig = esriHelper.setLoadModules({
+				const sig = await esriHelper.setLoadModules({
 					mods, 
 					async: choice.label === asyncAwait, 
 				})
@@ -75,7 +76,7 @@ function loadModsOnFly(){
 
 }
 
-function loadModsFromConfig(){
+async function loadModsFromConfig(){
 
 	// get text editor
 	const editor = vscode.window.activeTextEditor
@@ -97,7 +98,7 @@ function loadModsFromConfig(){
 		const config = vscode.workspace.getConfiguration(extensionID) as IEsriLoaderExtensionOptions
 
 		// const whitespace = editor.selection.start.character
-		const sig = esriHelper.setLoadModules({
+		const sig = await esriHelper.setLoadModules({
 			mods, 
 			async: config.syntaxStyle === 'async/await'
 		})
